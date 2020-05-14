@@ -1,60 +1,53 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-ang = 2 * np.pi / 3
-T = 20
-c = 20.05 * np.sqrt(T + 273.15)
+import itertools
 
 
 class Device3:
+    """
+    This class defines the geometry of the considered sensor set: the microphones are in a triangle layout
+    """
     def __init__(self, center_position, angle=0, r=0.1):
         
         self.angle = angle
         self.C = center_position
-        self.M1 = (center_position[0] + r*np.cos(angle), center_position[1] + r*np.sin(angle))
-        self.M2 = (center_position[0] + r*np.cos(angle + ang), center_position[1] + r*np.sin(angle + ang))
-        self.M3 = (center_position[0] + r*np.cos(angle + 2*ang), center_position[1] + r*np.sin(angle + 2*ang))
-        self.M_position = [self.M1, self.M2, self.M3]
+        iteration = list(itertools.combinations([0,1,2], 2))
         
-        self.C_M1_2 = ((self.M1[0] + self.M2[0])/2, (self.M1[1] + self.M2[1])/2)
-        self.C_M2_3 = ((self.M2[0] + self.M3[0])/2, (self.M2[1] + self.M3[1])/2)
-        self.C_M3_1 = ((self.M1[0] + self.M3[0])/2, (self.M1[1] + self.M3[1])/2)
-        self.C_M_position = [self.C_M1_2, self.C_M2_3, self.C_M3_1]
+        ang = 2 * np.pi / 3
+        self.M_position = [
+            (center_position[0] + r*np.cos(angle + n*ang), 
+             center_position[1] + r*np.sin(angle + n*ang)) for n in range(3)] 
+        self.C_M_position = []
         
-#        self.dist_M1_2 = np.sqrt( (self.M1[0] - self.M2[0])**2 + (self.M1[1] - self.M2[1])**2 )
-        self.dist_M1_2 = algebric_distance(self.M1, self.M2)
-        self.dist_M2_3 = algebric_distance(self.M2, self.M3)
-        self.dist_M3_1 = algebric_distance(self.M1, self.M3)
-        self.dist_M = [self.dist_M1_2, self.dist_M2_3, self.dist_M3_1]
+        for a, b in iteration:
+            center_mic_iter = ((self.M_position[a][0] + self.M_position[b][0])/2, (self.M_position[a][1] + self.M_position[b][1])/2)
+            self.C_M_position.append(center_mic_iter)
         
-        self.slope_M1_2 = (self.M2[1]- self.M1[1])/(self.M2[0]- self.M1[0])
-        self.angle_M1_2 = np.arctan(self.slope_M1_2)
-        self.slope_M2_3 = (self.M3[1]- self.M2[1])/(self.M3[0]- self.M2[0])
-        self.angle_M2_3 = np.arctan(self.slope_M2_3)
-        self.slope_M3_1 = (self.M1[1]- self.M3[1])/(self.M1[0]- self.M3[0])
-        self.angle_M3_1 = np.arctan(self.slope_M3_1)
-        self.slope_M = np.array([self.slope_M1_2, self.slope_M2_3, self.slope_M3_1])
-        self.angle_M = [self.angle_M1_2, self.angle_M2_3, self.angle_M3_1]
-        
+        self.dist_M = [algebric_distance(self.M_position[a], self.M_position[b]) for a, b in iteration]
+        self.slope_M = np.array([(self.M_position[b][1] - self.M_position[a][1]) / (self.M_position[b][0] - self.M_position[a][0]) for a, b in iteration]) 
+        self.angle_M = [np.arctan(self.slope_M[i]) for i in range(3)]
+
     def plot(self, figure):
-        figure.plot(*self.M1, "ok")
-        figure.plot(*self.C_M1_2, "or")
-        figure.plot(*self.M2, "ok")
-        figure.plot(*self.C_M2_3, "or")
-        figure.plot(*self.M3, "ok")
-        figure.plot(*self.C_M3_1, "or")
-        figure.plot([self.M1[0], self.C[0], self.M2[0], self.C[0], self.M3[0]], 
-                    [self.M1[1], self.C[1], self.M2[1], self.C[1], self.M3[1]],
-                    'k')
+        for mpos in self.M_position:
+            figure.plot(*mpos, "ok")
+        for mcen in self.C_M_position:
+            figure.plot(*mcen, "or")
+        figure.plot(
+            [self.M_position[0][0], self.C[0], self.M_position[1][0], self.C[0], self.M_position[2][0]],
+            [self.M_position[0][1], self.C[1], self.M_position[1][1], self.C[1], self.M_position[2][1]],
+            'k')
         return
+
 ####################################################
 
 
 class Situation3:
     def __init__(self, source, device):
         self.source_position = source
-        self.device = device
-        
+        self.device = device        
+        T = 20
+        self.c = 20.05 * np.sqrt(T + 273.15)
+
         self.timedelay_forsimu = [self.get_timedelay_from_pos(dev) for dev in self.device]
 
     def get_timedelay_from_pos(self, device_i):
@@ -64,9 +57,9 @@ class Situation3:
         time_delay = []
         center_time_delay = []
         for s in device_i.M_position:
-            time_delay.append(algebric_distance(s, self.source_position)/ c)
+            time_delay.append(algebric_distance(s, self.source_position)/ self.c)
         for center in device_i.C_M_position:
-            center_time_delay.append(algebric_distance(center, self.source_position)/c)
+            center_time_delay.append(algebric_distance(center, self.source_position) / self.c)
         return np.array(time_delay), np.array(center_time_delay)
     
     def get_TDOA_for_device(self, device_i):
@@ -86,7 +79,7 @@ class Situation3:
         # Entry : class Sensor
         # Return : angle alpha between the sensor and the source
         alpha = []
-        alpha.append(np.arccos(c*self.get_TDOA_for_device(device_i)[0]/device_i.dist_M))
+        alpha.append(np.arccos(self.c * self.get_TDOA_for_device(device_i)[0] / device_i.dist_M))
         return alpha[0]
     
     def get_beta(self, device_i):
@@ -139,57 +132,38 @@ class Situation3:
         figure.plot([self.source_position[0], device_i.C_M2_3[0]], [self.source_position[1], device_i.C_M2_3[1]])
         figure.plot([self.source_position[0], device_i.C_M3_1[0]], [self.source_position[1], device_i.C_M3_1[1]])
         
-        
-
 ####################################################
+if __name__ == "__main__":
+    def algebric_distance(pos0, posi):
+        """
+        computes the algebric distance between 2 points. Each point in the input must be a tuple 
+        Example: algebric_distance((2, 3), (4, 5))
+        """
+        di = np.sqrt( (posi[0] - pos0[0])**2 + (posi[1] - pos0[1])**2 )
+        return di
 
-def algebric_distance(pos0, posi):
-    """
-    computes the algebric distance between 2 points. Each point in the input must be a tuple 
-    Example: algebric_distance((2, 3), (4, 5))
-    """
-    di = np.sqrt( (posi[0] - pos0[0])**2 + (posi[1] - pos0[1])**2 )
-    return di
+    mic = Device3((0, 0), angle=0, r=0.1)
+    source = Situation3((7,5), [mic])
+    x = np.linspace(-5, 5, 100)
 
-def dt_inter(S1,S2,point):
-    dt = np.abs(algebric_distance(S2, point) - algebric_distance(S1, point))/c
-    return dt
+    a1, a2, b1, b2 = source.source_position_computation_i(mic)
+    y1 = []
+    y2 = []
 
-#def dt_inter(S1,S2,X,Y):
-#    dt = np.abs(dist(S2.centre, Point(X, Y)) - dist(S1.centre, Point(X, Y)))/v
-#    return dt
+    for i in range(3):
+        y1.append(a1[i]*x + b1[i])
+        y2.append(a2[i]*x + b2[i])
 
-mic = Device3((0,0), angle=0, r=0.1)
 
-test = Situation3((2,2), [mic])
-#pos = test.source_position_computation_i(mic)
-x = np.linspace(-10, 10, 100)
+    fig, ax = plt.subplots()
 
-a1, a2, b1, b2 = test.source_position_computation_i(mic)
+    mic.plot(ax)
+    ax.plot(*source.source_position, 'r^')
 
-y1 = []
-y2 = []
-for i in range(3):
-    y1.append(a1[i]*x + b1[i])
-    y2.append(a2[i]*x + b2[i])
+    for i in range(3):
+        ax.plot(x, y1[i], 'k--')
+        ax.plot(x, y2[i], 'k--')
+    
+    ax.axis('equal')
+    plt.show()
 
-fig, ax = plt.subplots()
-
-mic.plot(ax)
-#test.plot_result(ax, mic)
-ax.axis("equal")
-#ax.plot(*pos, 'b^')
-ax.plot(*test.source_position, 'r^')
-
-for i in range(3):
-    ax.plot(x, y1[i])
-    ax.plot(x, y2[i])
-
-# test.plot_result(ax, mic)
-
-# angl = [np.pi/6 *i for i in range(12)]
-
-# for i in angl:
-#     mic_test = Device3((0,0), angle = i, r=0.1)
-#     testt = Situation3((0.2,0.2),[mic_test])
-#     print(testt.get_beta(mic_test))

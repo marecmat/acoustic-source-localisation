@@ -5,16 +5,14 @@ import TDOALocalisation
 # np.random.randint(-100, 100)
 source_ac = (-17.5, 42.37)
 capteurs = [
-        (-100, 50),
-        (200, -57),
-        (650, 347),
-        (np.random.randint(-100, 100), np.random.randint(-200, 200)),
-        (np.random.randint(-100, 100), np.random.randint(-100, 100)),
+        (540, 850),
+        (348, 23),
+        (152, 350),
         ]
 error_range = 5e-1
 
 # Creating the class instance
-instance = TDOALocalisation.TDOALocalisation(source_ac, capteurs, error=error_range, T=15, step=0.5, max_dist=300, time_noise=200000)
+instance = TDOALocalisation.TDOALocalisation(source_ac, capteurs, T=15, step=0.5, max_dist=300, time_noise=200000)
 # PARAB contains a list of hyperbola equations
 data = instance.get_all_hyperboloid()
 

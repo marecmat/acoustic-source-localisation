@@ -9,7 +9,7 @@ class Point:
         self.toa = 0 if self.source==True else dist(self, S)/c
      
 
-class Sensor:
+class Device:
     def __init__(self, ma, mb):
         self.A1 = ma if ma.toa < mb.toa else mb
         self.A2 = mb if ma.toa < mb.toa else ma
@@ -24,8 +24,8 @@ def dist(A1, A2):
     return np.sqrt((A1.x - A2.x)**2 + (A1.y - A2.y)**2)
 
 def get_alpha(S1):
-    # Entry : class Sensor
-    # Return : angle alpha between the sensor and the source
+    # Entry : class Device
+    # Return : angle alpha between the Device and the source
     alpha = np.arccos(c*S1.tdoa/dist(S1.A1, S1.A2))
     return alpha
 
@@ -47,27 +47,27 @@ if __name__ == "__main__":
 
 #DEFINITIONS OF POSITIONS OF THE PHYSICAL DATA OF THE PROBLEM  
 
-    #Position of the sensor 1
+    #Position of the Device 1
     A1 = Point(3, 4)  
     A2 = Point(2, 5)
-    S1 = Sensor(A1, A2)
+    S1 = Device(A1, A2)
     
-    #Position of the sensor 2
+    #Position of the Device 2
     B1 = Point(6, 2)
     B2 = Point(7, 3)
-    S2 = Sensor(B1, B2)
+    S2 = Device(B1, B2)
     
-    #List of sensors (Useful for generalization to N sensor)
+    #List of sensors (Useful for generalization to N Device)
     listSn=[S1,S2]
     
-    #Delay of TOAs between both sensor centers 
+    #Delay of TOAs between both Device centers 
     dt = np.abs(S2.centre.toa - S1.centre.toa)  
 
 #COMPUTING OF ALL THE PROBABLE SOLUTIONS
-    #Computing of angle alpha between the sensor and the source   
+    #Computing of angle alpha between the Device and the source   
     listAlpha = [get_alpha(n) for n in listSn]
    
-    #Computing of angle alpha between the sensor and the X-axis  
+    #Computing of angle alpha between the Device and the X-axis  
     listBeta = [get_beta(n) for n in listSn]
     
     #Computing of linear functions with alpha and -alpha (to improve for N sensors)    
@@ -100,7 +100,7 @@ if __name__ == "__main__":
               a[2]*Xinter[3] + b[2]]
     
 #SELECT THE RIGHT SOLUTION
-    #Computing all the delay from each intersection to the center of each sensor
+    #Computing all the delay from each intersection to the center of each Device
     dt_Inter=[]
     for n in range(len(Xinter)):
         dt_Inter.append(dt_inter(S1,S2,Xinter[n],Yinter[n]))

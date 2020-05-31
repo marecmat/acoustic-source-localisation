@@ -6,10 +6,10 @@ class Point:
         self.x = x
         self.y = y
         self.source = source
-        self.toa = 0 if self.source==True else dist(self, S)/v
+        self.toa = 0 if self.source==True else dist(self, S)/c
      
 
-class Sensor:
+class Device:
     def __init__(self, ma, mb):
         self.A1 = ma if ma.toa < mb.toa else mb
         self.A2 = mb if ma.toa < mb.toa else ma
@@ -23,56 +23,54 @@ class Sensor:
 def dist(A1, A2):
     return np.sqrt((A1.x - A2.x)**2 + (A1.y - A2.y)**2)
 
-def alpha(S1):
-    # Entry : class Sensor
-    # Return : angle alpha between the sensor and the source
-    alpha = np.arccos(v*S1.tdoa/dist(S1.A1, S1.A2))
+def get_alpha(D1):
+    # Entry : class Device
+    # Return : angle alpha between the Device and the source
+    alpha = np.arccos(c*D1.tdoa/dist(D1.A1, D1.A2))
     return alpha
 
-def beta(S1):
-    beta = np.arctan((S1.A1.y - S1.A2.y)/(S1.A1.x - S1.A2.x))
-    beta = beta + S1.signeBeta*np.pi if S1.A1.x - S1.A2.x < 0 else beta
+def get_beta(D1):
+    beta = np.arctan((D1.A1.y - D1.A2.y)/(D1.A1.x - D1.A2.x))
+    beta = beta + D1.signeBeta*np.pi if D1.A1.x - D1.A2.x < 0 else beta
     return beta
 
-def dt_inter(S1,S2,X,Y):
-    dt = np.abs(dist(S2.centre, Point(X, Y)) - dist(S1.centre, Point(X, Y)))/v
+def dt_inter(D1,D2,X,Y):
+    dt = np.abs(dist(D2.centre, Point(X, Y)) - dist(D1.centre, Point(X, Y)))/c
     return dt
 
 
 S = Point(6.2, 4.75, source=True)            #Position of the source   
-v = 342                                 #Speed of sound
+T = 20                                       #Temperature
+c = 20.05 * np.sqrt(T + 273.15)              #Speed of sound
 
 if __name__ == "__main__":
 
 #DEFINITIONS OF POSITIONS OF THE PHYSICAL DATA OF THE PROBLEM  
 
-    #Position of the sensor 1
+    #Position of the Device 1
     A1 = Point(3, 4)  
     A2 = Point(2, 5)
-    S1 = Sensor(A1, A2)
+    D1 = Device(A1, A2)
     
-    #Position of the sensor 2
+    #Position of the Device 2
     B1 = Point(6, 2)
     B2 = Point(7, 3)
-    S2 = Sensor(B1, B2)
+    D2 = Device(B1, B2)
     
-    #List of sensors (Useful for generalization to N sensor)
-    listSn=[S1,S2]
+    #List of sensors (Useful for generalization to N Device)
+    listSn=[D1,D2]
     
-    #Delay of TOAs between both sensor centers 
-    dt = np.abs(S2.centre.toa - S1.centre.toa)  
+    #Delay of TOAs between both Device centers 
+    dt = np.abs(D2.centre.toa - D1.centre.toa)  
 
 #COMPUTING OF ALL THE PROBABLE SOLUTIONS
-    #Computing of angle alpha between the sensor and the source
-    
-    listAlpha = [alpha(n) for n in listSn]
+    #Computing of angle alpha between the Device and the source   
+    listAlpha = [get_alpha(n) for n in listSn]
    
-    #Computing of angle alpha between the sensor and the X-axis
+    #Computing of angle alpha between the Device and the X-axis  
+    listBeta = [get_beta(n) for n in listSn]
     
-    listBeta = [beta(n) for n in listSn]
-    
-    #Computing of linear functions with alpha and -alpha (to improve for N sensors)
-    
+    #Computing of linear functions with alpha and -alpha (to improve for N sensors)    
     #Computing of a for all combinaison of +-Alpha and Beta
     a=[]
     for i in range(len(listAlpha)):
@@ -102,12 +100,12 @@ if __name__ == "__main__":
               a[2]*Xinter[3] + b[2]]
     
 #SELECT THE RIGHT SOLUTION
-    #Computing all the delay from each intersection to the center of each sensor
+    #Computing all the delay from each intersection to the center of each Device
     dt_Inter=[]
     for n in range(len(Xinter)):
-        dt_Inter.append(dt_inter(S1,S2,Xinter[n],Yinter[n]))
+        dt_Inter.append(dt_inter(D1,D2,Xinter[n],Yinter[n]))
         
-    #Select the position in the dt_list with minimum delay between dt and dt_Inter (???)
+    #Select the position in the dt_list with minimum delay between dt and dt_Inter
     inter = [i for i in range(len(dt_Inter)) if np.abs(dt - dt_Inter[i]) == min([np.abs(dt - dt_Inter[j]) for j in range(4)])][0]
  
 #PRINTING OF THE FINAL SOLUTION

@@ -96,22 +96,7 @@ class Situation3:
                 else:
                     beta.append(np.arctan(device_i.slope_M[i]))
         return np.array(beta)
-                
-    def TDOA(self):
-        """
-        From the computed time delays, we get the TDOA values as well as the indice 
-        of the sensor which is the first to receive the signal
-        """
-#        time_delay = self.get_timedelay_from_pos() 
-#        d_time_noise = np.random.uniform(-1 * self.time_noise, self.time_noise) * 1e-6
-        # the sensor with the shortest time delay is the first one to receive the signal
-        TDOA = []
-        i = 0
-        for t_delay in self.timdelay_forsimu:
-            first_sensor_i = np.argmin(t_delay)
-            TDOA.append([])
-            TDOA[i].append(t_delay - t_delay[first_sensor_i]) #+ d_time_noise
-        return TDOA
+             
     
     def source_position_computation_i(self, device_i):
         TDOA_i, center_TDOA_i, first_sensor_i, first_center_i= self.get_TDOA_for_device(device_i)
